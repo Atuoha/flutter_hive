@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hive_crud/screens/widgets/are_you_sure.dart';
 import 'package:flutter_hive_crud/screens/widgets/text_action.dart';
+import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart';
 import '../constants/enums/yes_no.dart';
+import '../constants/string_constants.dart';
+import '../controller/controller.dart';
+import '../model/item.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,9 +19,15 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController title = TextEditingController();
   final TextEditingController quantity = TextEditingController();
+  late Controller controller;
+  final hiveBox = Hive.box(StringConstants.hiveBox);
+  final List<Map<String, dynamic>> items = [];
 
-  // delete item
-  void deleteItem(int itemId) {}
+  @override
+  void initState() {
+    super.initState();
+    controller = Controller(context: context);
+  }
 
   // delete dialog
   void deleteDialog(int itemId) {
@@ -26,24 +37,28 @@ class _MainScreenState extends State<MainScreen> {
       id: itemId.toString(),
       isIdInvolved: true,
       context: context,
-      action: deleteItem,
+      action: controller.deleteItem,
     );
   }
 
-  // edit item
-  void editItem(int itemId) {}
-
   // submit new item
   void submitNewItem() {
+    FocusScope.of(context).unfocus();
     var valid = _formKey.currentState!.validate();
 
     if (!valid) {
       return;
     }
+    Item item = Item(
+      id: const Uuid().v4(),
+      title: title.text,
+      quantity: int.parse(quantity.text),
+    );
+    controller.createItem(item: item);
   }
 
   // modal for new item
-  Future newItem() {
+  Future modalForNewItem() {
     return showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
@@ -109,7 +124,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => newItem(),
+        onPressed: () => modalForNewItem(),
         child: const Icon(Icons.add),
       ),
       appBar: AppBar(
@@ -145,7 +160,8 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             ),
-            onDismissed: (direction) => deleteItem(index),
+            onDismissed: (direction) =>
+                controller.deleteItem(id: index.toString()),
             direction: DismissDirection.endToStart,
             background: Container(
               decoration: BoxDecoration(
@@ -191,7 +207,8 @@ class _MainScreenState extends State<MainScreen> {
                   trailing: Wrap(
                     children: [
                       IconButton(
-                        onPressed: () => editItem(index),
+                        onPressed: () =>
+                            controller.editItem(id: index.toString()),
                         icon: const Icon(
                           Icons.edit,
                           color: Colors.white,

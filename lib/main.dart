@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hive_crud/screens/main_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+import 'constants/string_constants.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+  await Hive.openBox(StringConstants.hiveBox);
   runApp(const MyApp());
 }
 
