@@ -93,6 +93,8 @@ class _MainScreenState extends State<MainScreen> {
     );
     if (isCreate) {
       hiveController.createItem(item: item);
+      title.clear();
+      quantity.clear();
     } else {
       hiveController.editItem(item: item, itemKey: editKey);
 
@@ -179,121 +181,138 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => itemModal(),
-        child: const Icon(Icons.add),
-      ),
-      appBar: AppBar(
-        title: const Text('Hive Flutter'),
-        actions: [
-          items.isNotEmpty
-              ? IconButton(
-                  onPressed: () => clearAllDialog(),
-                  icon: const Icon(Icons.delete_forever),
-                )
-              : const SizedBox.shrink()
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          Item item = Item.fromMap(items[index]);
-          return Dismissible(
-            key: ValueKey(index),
-            confirmDismiss: (direction) => showDialog(
-              context: context,
-              builder: (BuildContext context) => AlertDialog(
-                elevation: 3,
-                title: const Text(
-                  'Are you sure?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                    fontSize: 18,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => itemModal(),
+          child: const Icon(Icons.add),
+        ),
+        appBar: AppBar(
+          title: const Text('Hive Flutter'),
+          actions: [
+            items.isNotEmpty
+                ? IconButton(
+                    onPressed: () => clearAllDialog(),
+                    icon: const Icon(Icons.delete_forever),
+                  )
+                : const SizedBox.shrink()
+          ],
+        ),
+        body: items.isNotEmpty
+            ? ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  Item item = Item.fromMap(items[index]);
+                  return Dismissible(
+                    key: ValueKey(index),
+                    confirmDismiss: (direction) => showDialog(
+                      context: context,
+                      builder: (BuildContext context) => AlertDialog(
+                        elevation: 3,
+                        title: const Text(
+                          'Are you sure?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                            fontSize: 18,
+                          ),
+                        ),
+                        content: Text(
+                          'Do you want to remove ${item.title} from list?',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                          ),
+                        ),
+                        actions: [
+                          textAction('Yes', YesNo.yes, context),
+                          textAction('No', YesNo.no, context),
+                        ],
+                      ),
+                    ),
+                    onDismissed: (direction) =>
+                        hiveController.deleteItem(key: items[index]['key']),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.red,
+                      ),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        child: ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.only(left: 5),
+                          tileColor: Colors.brown.withOpacity(0.7),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.brown.shade500,
+                            child: const Icon(
+                              Icons.circle_outlined,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                          subtitle: Text(
+                            item.quantity.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                          trailing: Wrap(
+                            children: [
+                              IconButton(
+                                onPressed: () => editHandle(
+                                    item: item, key: items[index]['key']),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () =>
+                                    deleteDialog(key: items[index]['key']),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+            : const Center(
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Icon(Icons.add),
+                  SizedBox(width: 10),
+                  Text(
+                    'Items are empty',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                content: Text(
-                  'Do you want to remove ${item.title} from list?',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-                actions: [
-                  textAction('Yes', YesNo.yes, context),
-                  textAction('No', YesNo.no, context),
                 ],
               ),
-            ),
-            onDismissed: (direction) =>
-                hiveController.deleteItem(key: items[index]['key']),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.red,
-              ),
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              child: const Icon(
-                Icons.delete,
-                color: Colors.white,
-                size: 40,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Card(
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  contentPadding: const EdgeInsets.only(left: 5),
-                  tileColor: Colors.brown.withOpacity(0.7),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.brown.shade500,
-                    child: const Icon(
-                      Icons.circle_outlined,
-                      color: Colors.white,
-                    ),
-                  ),
-                  title: Text(
-                    item.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                  subtitle: Text(
-                    item.quantity.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                    ),
-                  ),
-                  trailing: Wrap(
-                    children: [
-                      IconButton(
-                        onPressed: () =>
-                            editHandle(item: item, key: items[index]['key']),
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => deleteDialog(key: items[index]['key']),
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+            ));
   }
 }
