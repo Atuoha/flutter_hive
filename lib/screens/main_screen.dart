@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hive_crud/screens/widgets/are_you_sure.dart';
+import 'package:flutter_hive_crud/screens/widgets/text_action.dart';
+import '../constants/enums/yes_no.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,10 +16,22 @@ class _MainScreenState extends State<MainScreen> {
   final TextEditingController quantity = TextEditingController();
 
   // delete item
-  void deleteItem(String itemId) {}
+  void deleteItem(int itemId) {}
+
+  // delete dialog
+  void deleteDialog(int itemId) {
+    areYouSureDialog(
+      title: 'Delete item',
+      content: 'Are you sure you want to delete item',
+      id: itemId.toString(),
+      isIdInvolved: true,
+      context: context,
+      action: deleteItem,
+    );
+  }
 
   // edit item
-  void editItem(String itemId) {}
+  void editItem(int itemId) {}
 
   // submit new item
   void submitNewItem() {
@@ -49,6 +64,7 @@ class _MainScreenState extends State<MainScreen> {
                   if (value!.isEmpty || value.length < 3) {
                     return 'Title needs to be valid';
                   }
+                  return null;
                 },
               ),
               const SizedBox(height: 10),
@@ -64,12 +80,14 @@ class _MainScreenState extends State<MainScreen> {
                   if (value!.isEmpty) {
                     return 'Quantity can not be empty';
                   }
+                  return null;
                 },
               ),
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.brown.withOpacity(0.5)),
+                  backgroundColor: Colors.brown.withOpacity(0.5),
+                ),
                 onPressed: () => submitNewItem(),
                 icon: const Icon(
                   Icons.check,
@@ -100,51 +118,94 @@ class _MainScreenState extends State<MainScreen> {
       body: ListView(
         children: List.generate(
           30,
-          (index) => Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Card(
-              child: ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.only(left: 5),
-                tileColor: Colors.brown.withOpacity(0.7),
-                leading: CircleAvatar(
-                  backgroundColor: Colors.brown.shade500,
-                  child: const Icon(
-                    Icons.circle_outlined,
-                    color: Colors.white,
-                  ),
-                ),
-                title: Text(
-                  'Index $index',
-                  style: const TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
-                subtitle: const Text(
-                  'Subtitle',
+          (index) => Dismissible(
+            key: ValueKey(index),
+            confirmDismiss: (direction) => showDialog(
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                elevation: 3,
+                title: const Text(
+                  'Are you sure?',
                   style: TextStyle(
-                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    fontSize: 18,
                   ),
                 ),
-                trailing: const Wrap(
-                  children: [
-                    IconButton(
-                      onPressed: null,
-                      icon: Icon(
-                        Icons.edit,
-                        color: Colors.white,
-                      ),
+                content: Text(
+                  'Do you want to remove $index from list?',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                  ),
+                ),
+                actions: [
+                  textAction('Yes', YesNo.yes, context),
+                  textAction('No', YesNo.no, context),
+                ],
+              ),
+            ),
+            onDismissed: (direction) => deleteItem(index),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.red,
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              child: const Icon(
+                Icons.delete,
+                color: Colors.white,
+                size: 40,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  contentPadding: const EdgeInsets.only(left: 5),
+                  tileColor: Colors.brown.withOpacity(0.7),
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.brown.shade500,
+                    child: const Icon(
+                      Icons.circle_outlined,
+                      color: Colors.white,
                     ),
-                    IconButton(
-                      onPressed: null,
-                      icon: Icon(
-                        Icons.delete,
-                        color: Colors.white,
-                      ),
+                  ),
+                  title: Text(
+                    'Index $index',
+                    style: const TextStyle(
+                      color: Colors.white,
                     ),
-                  ],
+                  ),
+                  subtitle: const Text(
+                    'Subtitle',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                  trailing: Wrap(
+                    children: [
+                      IconButton(
+                        onPressed: () => editItem(index),
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => deleteDialog(index),
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
