@@ -18,21 +18,26 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController title = TextEditingController();
   final TextEditingController quantity = TextEditingController();
-  late Controller controller;
+  late HiveController hiveController;
   final hiveBox = Hive.box(StringConstants.hiveBox);
   List<Map<String, dynamic>> items = [];
+  int editKey = 0;
+  bool isCreate = true;
 
   @override
   void initState() {
     super.initState();
-    controller = Controller(context: context);
+    hiveController = HiveController(
+      context: context,
+      fetchDataFunction: fetchData,
+    );
     fetchData();
   }
 
   // fetch data
   void fetchData() {
     setState(() {
-      items = controller.fetchData();
+      items = hiveController.fetchData();
     });
   }
 
@@ -44,8 +49,24 @@ class _MainScreenState extends State<MainScreen> {
       key: key,
       isKeyInvolved: true,
       context: context,
-      action: controller.deleteItem,
+      action: hiveController.deleteItem,
     );
+  }
+
+  // edit handle
+  void editHandle({required Item item, required int key}) {
+    Item item = Item.fromMap(hiveBox.get(key));
+    print(item.title);
+
+    setState(() {
+      title.text = item.title;
+      quantity.text = item.quantity.toString();
+      editKey = key;
+      isCreate = false;
+    });
+
+    // modal for editing
+    itemModal();
   }
 
   // clear all dialog
@@ -54,12 +75,12 @@ class _MainScreenState extends State<MainScreen> {
       title: 'Clear items',
       content: 'Are you sure you want to clear items',
       context: context,
-      action: controller.clearItems,
+      action: hiveController.clearItems,
     );
   }
 
-  // submit new item
-  void submitNewItem() {
+  // submit item
+  void submitItem() {
     FocusScope.of(context).unfocus();
     var valid = _formKey.currentState!.validate();
 
@@ -70,7 +91,19 @@ class _MainScreenState extends State<MainScreen> {
       title: title.text,
       quantity: int.parse(quantity.text),
     );
-    controller.createItem(item: item);
+    if (isCreate) {
+      hiveController.createItem(item: item);
+    } else {
+      hiveController.editItem(item: item, itemKey: editKey);
+
+      // resetting data
+      setState(() {
+        title.clear();
+        quantity.clear();
+        editKey = 0;
+        isCreate = true;
+      });
+    }
   }
 
   @override
@@ -79,8 +112,8 @@ class _MainScreenState extends State<MainScreen> {
     fetchData();
   }
 
-  // modal for new item
-  Future modalForNewItem() {
+  // modal for new/edit item
+  Future itemModal() {
     return showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
@@ -91,6 +124,7 @@ class _MainScreenState extends State<MainScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
+                autofocus: true,
                 controller: title,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
@@ -125,7 +159,7 @@ class _MainScreenState extends State<MainScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.brown.withOpacity(0.5),
                 ),
-                onPressed: () => submitNewItem(),
+                onPressed: () => submitItem(),
                 icon: const Icon(
                   Icons.check,
                   color: Colors.white,
@@ -146,7 +180,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => modalForNewItem(),
+        onPressed: () => itemModal(),
         child: const Icon(Icons.add),
       ),
       appBar: AppBar(
@@ -192,7 +226,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             onDismissed: (direction) =>
-                controller.deleteItem(key: items[index]['key']),
+                hiveController.deleteItem(key: items[index]['key']),
             direction: DismissDirection.endToStart,
             background: Container(
               decoration: BoxDecoration(
@@ -238,8 +272,8 @@ class _MainScreenState extends State<MainScreen> {
                   trailing: Wrap(
                     children: [
                       IconButton(
-                        onPressed: () => controller.editItem(
-                            item: item, key: items[index]['key']),
+                        onPressed: () =>
+                            editHandle(item: item, key: items[index]['key']),
                         icon: const Icon(
                           Icons.edit,
                           color: Colors.white,

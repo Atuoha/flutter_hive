@@ -7,10 +7,11 @@ import '../constants/enums/status.dart';
 import '../model/item.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-class Controller {
+class HiveController {
   final BuildContext context;
+  final Function fetchDataFunction;
 
-  Controller({required this.context});
+  HiveController({required this.context, required this.fetchDataFunction});
 
   final hiveBox = Hive.box(StringConstants.hiveBox);
 
@@ -34,7 +35,6 @@ class Controller {
   }) async {
     try {
       await hiveBox.add(item.toMap());
-      print('Items length ${hiveBox.length}');
       afterAction(keyword: 'saved');
     } catch (e) {
       toastInfo(
@@ -47,8 +47,10 @@ class Controller {
     }
   }
 
-  Future<void> editItem({required Item item, required String key}) async {
+  Future<void> editItem({required Item item, required int itemKey}) async {
     try {
+      hiveBox.put(itemKey, item.toMap());
+      afterAction(keyword: 'edited');
     } catch (e) {
       toastInfo(
         msg: 'An error occurred while trying to edit item',
@@ -75,7 +77,6 @@ class Controller {
     }
   }
 
-
   Future<void> clearItems() async {
     try {
       await hiveBox.clear();
@@ -96,6 +97,7 @@ class Controller {
       msg: 'Successfully $keyword item',
       status: Status.success,
     );
+    fetchDataFunction();
     Navigator.of(context).pop();
   }
 }
