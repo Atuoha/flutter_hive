@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hive_crud/screens/widgets/are_you_sure.dart';
 import 'package:flutter_hive_crud/screens/widgets/text_action.dart';
 import 'package:hive/hive.dart';
-import 'package:uuid/uuid.dart';
 import '../constants/enums/yes_no.dart';
 import '../constants/string_constants.dart';
 import '../controller/controller.dart';
@@ -21,23 +20,41 @@ class _MainScreenState extends State<MainScreen> {
   final TextEditingController quantity = TextEditingController();
   late Controller controller;
   final hiveBox = Hive.box(StringConstants.hiveBox);
-  final List<Map<String, dynamic>> items = [];
+  List<Map<String, dynamic>> items = [];
 
   @override
   void initState() {
     super.initState();
     controller = Controller(context: context);
+    fetchData();
+  }
+
+  // fetch data
+  void fetchData() {
+    setState(() {
+      items = controller.fetchData();
+    });
   }
 
   // delete dialog
-  void deleteDialog(int itemId) {
+  void deleteDialog({required int key}) {
     areYouSureDialog(
       title: 'Delete item',
       content: 'Are you sure you want to delete item',
-      id: itemId.toString(),
-      isIdInvolved: true,
+      key: key,
+      isKeyInvolved: true,
       context: context,
       action: controller.deleteItem,
+    );
+  }
+
+  // clear all dialog
+  void clearAllDialog() {
+    areYouSureDialog(
+      title: 'Clear items',
+      content: 'Are you sure you want to clear items',
+      context: context,
+      action: controller.clearItems,
     );
   }
 
@@ -50,11 +67,16 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
     Item item = Item(
-      id: const Uuid().v4(),
       title: title.text,
       quantity: int.parse(quantity.text),
     );
     controller.createItem(item: item);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    fetchData();
   }
 
   // modal for new item
@@ -129,11 +151,20 @@ class _MainScreenState extends State<MainScreen> {
       ),
       appBar: AppBar(
         title: const Text('Hive Flutter'),
+        actions: [
+          items.isNotEmpty
+              ? IconButton(
+                  onPressed: () => clearAllDialog(),
+                  icon: const Icon(Icons.delete_forever),
+                )
+              : const SizedBox.shrink()
+        ],
       ),
-      body: ListView(
-        children: List.generate(
-          30,
-          (index) => Dismissible(
+      body: ListView.builder(
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          Item item = Item.fromMap(items[index]);
+          return Dismissible(
             key: ValueKey(index),
             confirmDismiss: (direction) => showDialog(
               context: context,
@@ -148,7 +179,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 content: Text(
-                  'Do you want to remove $index from list?',
+                  'Do you want to remove ${item.title} from list?',
                   style: const TextStyle(
                     color: Colors.black,
                     fontSize: 14,
@@ -161,7 +192,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             onDismissed: (direction) =>
-                controller.deleteItem(id: index.toString()),
+                controller.deleteItem(key: items[index]['key']),
             direction: DismissDirection.endToStart,
             background: Container(
               decoration: BoxDecoration(
@@ -193,29 +224,29 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   title: Text(
-                    'Index $index',
+                    item.title,
                     style: const TextStyle(
                       color: Colors.white,
                     ),
                   ),
-                  subtitle: const Text(
-                    'Subtitle',
-                    style: TextStyle(
+                  subtitle: Text(
+                    item.quantity.toString(),
+                    style: const TextStyle(
                       color: Colors.white,
                     ),
                   ),
                   trailing: Wrap(
                     children: [
                       IconButton(
-                        onPressed: () =>
-                            controller.editItem(id: index.toString()),
+                        onPressed: () => controller.editItem(
+                            item: item, key: items[index]['key']),
                         icon: const Icon(
                           Icons.edit,
                           color: Colors.white,
                         ),
                       ),
                       IconButton(
-                        onPressed: () => deleteDialog(index),
+                        onPressed: () => deleteDialog(key: items[index]['key']),
                         icon: const Icon(
                           Icons.delete,
                           color: Colors.white,
@@ -226,8 +257,8 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

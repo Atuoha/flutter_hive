@@ -8,8 +8,8 @@ Future<void> areYouSureDialog({
   required String content,
   required BuildContext context,
   required Function action,
-  bool isIdInvolved = false,
-  String id = '',
+  bool isKeyInvolved = false,
+  int key = 0,
 }) {
   return showDialog(
     context: context,
@@ -34,7 +34,7 @@ Future<void> areYouSureDialog({
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () => isIdInvolved ? action(id) : action(),
+            onPressed: () => isKeyInvolved ? action(key: key) : action(),
             child: const Text('Yes'),
           ),
         ),
@@ -70,7 +70,7 @@ Future<void> areYouSureDialog({
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: () => isIdInvolved ? action(id) : action(),
+          onPressed: () => isKeyInvolved ? action(key: key) : action(),
           child: const Text('Yes'),
         ),
         ElevatedButton(

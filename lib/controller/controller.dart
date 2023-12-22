@@ -14,22 +14,28 @@ class Controller {
 
   final hiveBox = Hive.box(StringConstants.hiveBox);
 
+  // fetch data
+  List<Map<String, dynamic>> fetchData() {
+    final data = hiveBox.keys.map((key) {
+      final item = hiveBox.get(key);
+      return {
+        'key': key,
+        'id': item['id'],
+        'title': item['title'],
+        'quantity': item['quantity']
+      };
+    }).toList();
+
+    return data.reversed.toList();
+  }
+
   Future<void> createItem({
     required Item item,
   }) async {
     try {
-      await hiveBox.add(
-        {
-          'id': item.id,
-          'title': item.title,
-          'quantity': item.quantity,
-        },
-      );
+      await hiveBox.add(item.toMap());
       print('Items length ${hiveBox.length}');
-      toastInfo(
-        msg: 'Successfully saved item',
-        status: Status.success,
-      );
+      afterAction(keyword: 'saved');
     } catch (e) {
       toastInfo(
         msg: 'An error occurred while trying to create item',
@@ -41,8 +47,9 @@ class Controller {
     }
   }
 
-  Future<void> editItem({required String id}) async {
-    try {} catch (e) {
+  Future<void> editItem({required Item item, required String key}) async {
+    try {
+    } catch (e) {
       toastInfo(
         msg: 'An error occurred while trying to edit item',
         status: Status.error,
@@ -53,8 +60,11 @@ class Controller {
     }
   }
 
-  Future<void> deleteItem({required String id}) async {
-    try {} catch (e) {
+  Future<void> deleteItem({required int key}) async {
+    try {
+      await hiveBox.delete(key);
+      afterAction(keyword: 'deleted');
+    } catch (e) {
       toastInfo(
         msg: 'An error occurred while trying to delete item',
         status: Status.error,
@@ -63,5 +73,29 @@ class Controller {
         print('Error occurred $e');
       }
     }
+  }
+
+
+  Future<void> clearItems() async {
+    try {
+      await hiveBox.clear();
+      afterAction(keyword: 'deleted');
+    } catch (e) {
+      toastInfo(
+        msg: 'An error occurred while trying to delete item',
+        status: Status.error,
+      );
+      if (kDebugMode) {
+        print('Error occurred $e');
+      }
+    }
+  }
+
+  void afterAction({required String keyword}) {
+    toastInfo(
+      msg: 'Successfully $keyword item',
+      status: Status.success,
+    );
+    Navigator.of(context).pop();
   }
 }
